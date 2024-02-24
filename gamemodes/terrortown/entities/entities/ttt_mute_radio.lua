@@ -112,43 +112,12 @@ if SERVER then
 end
 
 if CLIENT then 
-    local material = Material("vgui/white")
-    local mat_color = Color(0, 255, 0, 30)
-    
     function ENT:Draw()
         self:DrawModel()
         self:CreateShadow()
     end
     
-    hook.Add( "PostDrawTranslucentRenderables", "TTT2MuteRadioRenderRadius", function()
-        local ply = LocalPlayer()
-        local eyeTrace = ply:GetEyeTrace()
-        local hitEntity = eyeTrace.Entity
-        local cvMuteRadius = CreateConVar("ttt_mute_radio_radius", "600", {FCVAR_NOTIFY, FCVAR_ARCHIVE})
-    
-        
-        if not hitEntity:IsValid() then return end
-        if hitEntity.ClassName ~= "ttt_base_placeable" then return end
-    
-        local playerTeam = ply:GetTeam()
-        local ownerTeam = hitEntity.Owner:GetTeam()
-    
-        if playerTeam == ownerTeam then
-            local quality = 20
-            cam.Start3D()
-            render.SetMaterial(material)
-            render.SetColorMaterial()
-            render.DrawSphere( hitEntity:GetPos(), -cvMuteRadius:GetInt(), quality, quality, mat_color)
-            render.DrawSphere( hitEntity:GetPos(), cvMuteRadius:GetInt(), quality, quality, mat_color)
-            render.DrawWireframeSphere( hitEntity:GetPos(), cvMuteRadius:GetInt(), quality, quality, mat_color, true)
-    
-            cam.End3D()
-        end
-    
-    end )
-    
     local color_orange = Color(255, 128, 0);
-    
     hook.Add("TTTRenderEntityInfo", "TTT2MuteRadioRenderName", function(tData)
         local ent = tData:GetEntity()
         if not IsValid(ent) then return end
