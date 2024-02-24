@@ -1,6 +1,0 @@
-ENT.Type = "anim"
-ENT.Base = "ttt_mute_radio"
-ENT.PrintName = "Mute Radio"
-ENT.Author = "Blechkanne"
-ENT.Purpose = "Mutes Voicechat"
-ENT.Instructions = "Throw and it will mute voicechat near it"
