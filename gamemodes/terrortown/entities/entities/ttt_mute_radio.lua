@@ -27,6 +27,8 @@ if SERVER then
         self:SetSolid( SOLID_VPHYSICS )
         self:SetModelScale(0.3)
         self.BaseClass.Initialize(self)
+        self:SetHealth(100)
+        self.ownerTeam = self:GetOriginator():GetTeam()
 
         local phys = self:GetPhysicsObject()
     
@@ -43,26 +45,24 @@ if SERVER then
         net.WriteBool(bool)
         net.Send(ply)
     end
-    
-    function ENT:Use( activator, caller )
-        if not activator:IsPlayer() then return end
-        local playerTeam = activator:GetTeam()
-    
+
+    function ENT:PlayerCanPickupWeapon(activator)
+        return self:GetOriginator() == activator
+    end
+
+    function ENT:WasDestroyed(pos, dmgInfo)
+        local originator = self:GetOriginator()
+        local effectdata = EffectData()
+
         for _, ply in ipairs(player.GetAll()) do
             self:SendMuteStatus(ply, false)
             ply.hasMutedSound = false
         end
-    
-        if playerTeam == self.ownerTeam then
-            activator:Give("mute_radio")
-            self:Remove()
-        else
-            local effectdata = EffectData()
-            effectdata:SetOrigin( self:GetPos() )
-            util.Effect( "ManhackSparks", effectdata )
-            self:EmitSound("BaseGrenade.Explode")
-            self:Remove()
-        end
+
+        effectdata:SetOrigin( pos )
+        util.Effect( "ManhackSparks", effectdata )
+        self:EmitSound("BaseGrenade.Explode")
+        LANG.Msg(originator, "weapon_mute_radio_destroyed", nil, MSG_MSTACK_WARN)
     end
 
     local muteInterval = 0.25
@@ -112,39 +112,39 @@ if SERVER then
 end
 
 if CLIENT then 
+    local TryT = LANG.TryTranslation
+    local ParT = LANG.GetParamTranslation
+
     function ENT:Draw()
         self:DrawModel()
         self:CreateShadow()
     end
     
-    local color_orange = Color(255, 128, 0);
     hook.Add("TTTRenderEntityInfo", "TTT2MuteRadioRenderName", function(tData)
+        local client = LocalPlayer()
         local ent = tData:GetEntity()
-        if not IsValid(ent) then return end
-        if ent.ClassName ~= "ttt_mute_radio" then return end
-    
-        local ply = LocalPlayer()
-        local entityPos = ent:GetPos()
-        local plyPos = ply:GetPos()
-        local distance = entityPos:Distance(plyPos)
-    
-        if distance > 100 then return end
-    
-        local playerTeam = ply:GetTeam()
-        local ownerTeam = ent.Owner:GetTeam()
-    
-        if playerTeam == ownerTeam  then
-            tData:SetTitle("Mute Radio", color_orange)
-            tData:EnableText(true)
-            tData:EnableOutline(true)
-            tData:AddDescriptionLine("Press E to pick back up", color_white, {})
-        else
-            tData:SetTitle("Mute Radio", color_orange)
-            tData:EnableText(true)
-            tData:EnableOutline(true)
-            tData:AddDescriptionLine("Press E to destroy", color_white, {})
+
+        if
+            not client:IsTerror()
+            or not IsValid(ent)
+            or tData:GetEntityDistance() > 100
+            or ent:GetClass() ~= "ttt_mute_radio"
+            or client:GetTeam() ~= ent:GetOriginator():GetTeam()
+        then
+            return
         end
-    
+
+        tData:EnableText()
+        tData:EnableOutline()
+        tData:SetOutlineColor(client:GetRoleColor())
+        tData:SetTitle(TryT(ent.PrintName))
+        tData:SetKeyBinding("+use")
+
+        if ent:GetOriginator() == client then
+            tData:SetSubtitle("Press " .. Key("+use", "USE") .. " to pick back up")
+        else
+            tData:SetSubtitle("Press " .. Key("+use", "USE") .. "  to destroy")
+        end
         return true
     end)
 end

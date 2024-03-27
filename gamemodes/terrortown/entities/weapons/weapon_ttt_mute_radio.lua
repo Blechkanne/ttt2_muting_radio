@@ -51,26 +51,13 @@ SWEP.Secondary.Ammo = "none"
 function SWEP:PrimaryAttack()
 	self:SetNextPrimaryFire( CurTime() + self.Primary.Delay )
 
-	if CLIENT then return end
-	if not self:CanPrimaryAttack() then return end
-
-	local owner = self:GetOwner()
-	local ent = ents.Create("ttt_mute_radio")
-	local aimvec = owner:GetAimVector()
-	local pos = aimvec * 10
-
-	pos:Add( owner:EyePos() )
-	ent:SetPos( pos )
-	ent:SetAngles( owner:EyeAngles() )
-	ent:Spawn()
-
-	local phys = ent:GetPhysicsObject()
-	phys:ApplyForceCenter(Vector(aimvec.x, aimvec.y, aimvec.z) * 5000)
-
-	ent:SetOwner(owner)
-	ent.ownerTeam = owner:GetTeam()
-	ent.fingerprints = self.fingerprints
-	self:Remove()
+    if SERVER and self:CanPrimaryAttack() then
+        local radio = ents.Create("ttt_mute_radio")
+        
+        if radio:ThrowEntity(self:GetOwner(), Angle(90, 0, 0)) then
+            self:Remove()
+        end
+    end
 end
 
 function SWEP:SecondaryAttack() end
